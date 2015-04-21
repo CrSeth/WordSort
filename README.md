@@ -1,4 +1,4 @@
-# CharCounter - NASM32bit_LINUX
+# WordSort - NASM32bit_LINUX
 Simple NASM program to order an array of Words
 
 NASM homework assignment
