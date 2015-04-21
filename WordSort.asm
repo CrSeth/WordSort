@@ -15,7 +15,7 @@ word8		db 	"Costa Rica"
 word9		db 	"Arduino", 0
 word10		db 	"Dota", 0	;word 10
 .UDATA
-bufferWord	resb 10			;used to swap word order around when doing sort
+valueArray	resw 10			;fill with numeric value of word
 wordArray	resb 100		;load words into here, fill with 0
 
 .CODE
