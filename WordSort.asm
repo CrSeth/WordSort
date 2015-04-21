@@ -4,28 +4,30 @@
 nonOrderedMsg	db	"Ten unordered Words are: ",0
 orderedMsg	db	"The ten words ordered alphabetically: ",0
 		;10 words of 10bytes MAX each starts here
-word1		db  	"new", 0	;word 1
+word1		db  	"new", 0		;word 1
 word2		db 	"mundo", 0
 word3		db 	"palindrome"	;if exactly 10 chars no need for 0
 word4		db 	"Grecia", 0
-word5		db 	"Nasm", 0
+word5		db 	"nasm", 0
 word6		db 	"HOLA", 0
 word7		db 	"gato", 0
 word8		db 	"Costa Rica"
 word9		db 	"Arduino", 0
-word10		db 	"Dota", 0	;word 10
+word10		db 	"Dota", 0		;word 10
 .UDATA
-wordBuffer	resb 10			;used to swap word order arround
-wordArray	resb 100		;load words into here, fill with 0
+wordBuffer	resb 10				;used to swap word order arround
+wordArray	resb 100				;load words into here, fill with 0
 
 .CODE
 	.STARTUP
-	call 	loadWords
+	call loadWords
 	call showNonOrdered
 
 	mov esi, wordArray
-	add esi, 30
-	call movWordBuffer
+	call sortArrayInit
+
+
+
 	jmp END
 
 END:
@@ -64,19 +66,18 @@ doneLoad:
 
 ;-------------------------------------------------------
 ;Procedure to sort words in the array
+;ESI needs to point to first word in array
 ;-------------------------------------------------------
 sortArrayInit:			;sort the words in the array alphabetically
 	pushad
-	mov esi, wordArray
-	mov ebx, wordBuffer
-	xor ecx, ecx
-	push ecx
-	xor edx, edx		;we going to compare first letter
-getWord:			;Get each word to be compared
-	pop ecx
-	mov eax, 10		;to move esi pointer 10 bytes
-	imul eax, ecx		;mul displacement by word calculating
-	add esi, eax		;add displacement
+
+	xor ecx, ecx			;ch we use as upper 10 loop cl lower 10 loop
+	xor edx, edx			;we going to compare first letter
+getWord:						;Get each word to be compared
+	xor eax, eax
+	mov al, cl
+	imul eax, 10			;mul displacement by word calculating
+	add esi, eax			;add displacement
 	inc ecx
 	cmp ecx, 10
 	je showOrdered
@@ -96,6 +97,54 @@ compareWord:
 	pop esi
 	popad
 	ret
+
+;-------------------------------------------------------
+;Procedure to compare two strings alphabetically
+;ESI needs to point to first word, EBX to second word
+;RETURN EAX: 0 (are equal), 1 EBX comes first, -1 ESI comes first
+;-------------------------------------------------------
+cmpStr:
+	push esi
+	push ebx
+	push ecx
+	xor ecx, ecx
+cmpStrLoop:
+	mov ah, [esi]
+	mov al, [ebx]
+
+	inc esi
+	inc ebx
+	inc ecx
+
+	or	al, 20h		;change 5bit to 1 | Lower Case ASCII
+	or	ah, 20h
+
+	PutCh ah
+	PutCh al
+
+	cmp ah, al		;compare the two chars
+	jg  ebxFirst
+	jl	esiFirst
+
+								;if we chececk all the chars in both strings
+	cmp ecx, 10
+	je areEqual
+	jmp	cmpStrLoop;if we make it here both chars are equal
+esiFirst:
+	mov eax, -1
+	jmp endCmp
+ebxFirst:
+	mov eax, 1
+	jmp endCmp
+areEqual:
+	mov eax, 0
+endCmp:
+	pop ecx
+	pop ebx
+	pop esi
+	ret
+
+
 
 ;-------------------------------------------------------
 ;Procedure to move a word to buffer
@@ -136,12 +185,12 @@ showOrdered:
 	nwln
 
 showWordsInit:
-	pushad				;save all the registers
-	mov cx, 11		;10 words to display
+	pushad							;save all the registers
+	mov cx, 11					;10 words to display
 	mov esi, wordArray	;point esi to beginning of esi
 	sub esi, 10
 showWords:
-	xor edx, edx		;use as index
+	xor edx, edx				;use as index
 	add esi, 10
 showChars:
 	PutCh	[esi+edx]
@@ -151,5 +200,5 @@ showChars:
 	nwln
 	dec cx
 	jne showWords
-	popad					;restore registers
-	ret						;en precedure
+	popad								;restore registers
+	ret									;en precedure
