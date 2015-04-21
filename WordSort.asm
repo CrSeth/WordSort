@@ -20,35 +20,53 @@ wordArray	resb 100		;load words into here, fill with 0
 
 .CODE
 	.STARTUP
-loadWords:			;load words intro array
+	call 	loadWords
+	call showNonOrdered
+
+	mov esi, wordArray
+	add esi, 30
+	call movWordBuffer
+	jmp END
+
+END:
+	.EXIT
+
+
+;-------------------------------------------------------
+;Procedure Save the 10 words into arrayBlock.
+;-------------------------------------------------------
+loadWords:					;load words intro array
+	pushad						;save registers
 	mov esi, wordArray
 	mov ebx, word1
-	mov cx, 12		;12 because we have 10 words and we dec before looping
+	mov cx, 11				;10 words to loop over and we dec at start so 11
 	sub esi, 10
 loadWordsLoop:
 	add esi, 10
 	xor edx, edx
 	dec cx
-	je showNonOrdered
-movCharsLoop:			;mov all cahrs in word
-	mov ah, [ebx]		;align get our char
+	je doneLoad
+movCharsLoop:				;mov all cahrs in word
+	mov ah, [ebx]			;align get our char
 	mov [esi+edx],ah
-	inc ebx			;move to next char
+	inc ebx						;move to next char
 	inc edx
 
 	cmp edx, 10
-	je loadWordsLoop	
+	je loadWordsLoop
 
-	cmp ah, 0		;if end of word go to next word
+	cmp ah, 0					;if end of word go to next word
 	je loadWordsLoop	;if we counted through 10 chars then also go to next word
 	jmp movCharsLoop	;when 0 stop looping
+doneLoad:
+	popad							;restore registers
+	ret
 
-showNonOrdered:
-	nwln
-	PutStr nonOrderedMsg
-	nwln
-
+;-------------------------------------------------------
+;Procedure to sort words in the array
+;-------------------------------------------------------
 sortArrayInit:			;sort the words in the array alphabetically
+	pushad
 	mov esi, wordArray
 	mov ebx, wordBuffer
 	xor ecx, ecx
@@ -56,11 +74,11 @@ sortArrayInit:			;sort the words in the array alphabetically
 	xor edx, edx		;we going to compare first letter
 getWord:			;Get each word to be compared
 	pop ecx
-	mov eax, 10		;to move esi pointer 10 bytes 
+	mov eax, 10		;to move esi pointer 10 bytes
 	imul eax, ecx		;mul displacement by word calculating
 	add esi, eax		;add displacement
 	inc ecx
-	cmp ecx, 10	
+	cmp ecx, 10
 	je showOrdered
 	push esi
 	jmp movWordBuffer
@@ -76,9 +94,49 @@ compareWord:
 	cmp al, ah
 	jge movWordBuffer
 	pop esi
+	popad
+	ret
 
+;-------------------------------------------------------
+;Procedure to move a word to buffer
+;Moves 10char word saved being point to by ESI
+;-------------------------------------------------------
+movWordBuffer:
+	pushad
+	mov ebx, wordBuffer
+	xor cx, cx
+movWordBufferLoop:
+	mov ah,[esi]
+	mov [ebx], ah
+	inc ebx
+	inc esi
+	inc cx
+	cmp cx, 10
+	jne movWordBufferLoop
+finishWordBufferMov:
+	nwln
+	PutStr wordBuffer
+	nwln
+	popad
+	ret
+
+;-------------------------------------------------------
+;Procedure to show what is in the array
+;-------------------------------------------------------
+showNonOrdered:
+	nwln
+	PutStr nonOrderedMsg
+	nwln
+	jmp showWordsInit
+
+showOrdered:
+	PutStr	orderedMsg
+	nwln
+	PutStr	wordBuffer
+	nwln
 
 showWordsInit:
+	pushad				;save all the registers
 	mov cx, 11		;10 words to display
 	mov esi, wordArray	;point esi to beginning of esi
 	sub esi, 10
@@ -93,38 +151,5 @@ showChars:
 	nwln
 	dec cx
 	jne showWords
-
-showOrdered:
-	PutStr	orderedMsg
-	nwln
-	PutStr	wordBuffer
-	nwln
-
-END:
-	.EXIT
-
-
-movWordBuffer:
-	pop esi
-	push cx
-	push ebx
-	mov ebx, wordBuffer
-	xor cx, cx
-movWordBufferLoop:
-	mov ah,[esi]
-	mov [ebx], ah
-	cmp ah, 0
-	je finishWordBufferMov
-	inc ebx
-	inc esi
-	inc cx
-	cmp cx, 10
-	je finishWordBufferMov
-	jmp movWordBufferLoop
-finishWordBufferMov:
-	nwln
-	PutStr wordBuffer
-	nwln
-	pop ebx
-	pop cx
-	jmp compareWord
+	popad					;restore registers
+	ret						;en precedure
