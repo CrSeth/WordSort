@@ -1,3 +1,14 @@
+;-------------------------------------------------------
+;This program adds 10 words of maximum 10 chars
+;to a two dimensional array. The array of words is
+;shown on screen then the words are sorted alphabetically
+;using select sort and displayed again in their ordered form.
+;
+;---
+;Instituto Tecnologico de Costa Rica - 2015 
+;Course: Computer Achitecture
+;-------------------------------------------------------
+
 %include "io.mac"
 
 .DATA
