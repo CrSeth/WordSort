@@ -4,11 +4,11 @@
 nonOrderedMsg	db	"Ten unordered Words are: ",0
 orderedMsg	db	"The ten words ordered alphabetically: ",0
 		;10 words of 10bytes MAX each starts here
-word1		db  	"new", 0		;word 1
-word2		db 	"mundo", 0
-word3		db 	"palindrome"	;if exactly 10 chars no need for 0
-word4		db 	"Grecia", 0
-word5		db 	"nasm", 0
+word1		db  	"z", 0		;word 1
+word2		db 	"a", 0
+word3		db 	"c", 0	;if exactly 10 chars no need for 0
+word4		db 	"e", 0
+word5		db 	"b", 0
 word6		db 	"HOLA", 0
 word7		db 	"gato", 0
 word8		db 	"Costa Rica"
@@ -26,7 +26,9 @@ wordArray	resb 100				;load words into here, fill with 0
 	mov esi, wordArray
 	call sortArrayInit
 
+	call showOrdered
 
+	PutStr wordArray
 
 	jmp END
 
@@ -65,38 +67,48 @@ doneLoad:
 	ret
 
 ;-------------------------------------------------------
-;Procedure to sort words in the array
+;Procedure to sort words in the array / Uses Selection Sort
 ;ESI needs to point to first word in array
 ;-------------------------------------------------------
-sortArrayInit:			;sort the words in the array alphabetically
+sortArrayInit:				;sort the words in the array alphabetically
 	pushad
+	sub esi, 10					;we add 10 in first run get word so we need to align
+	xor ecx, ecx				;ch we use as upper 10 loop cl lower 10 loop
+getWord:							;Get each word to be compared / OUTER LOOP
+	add esi, 10					;move the outer loop one word foward
+	mov ebx, esi
 
-	xor ecx, ecx			;ch we use as upper 10 loop cl lower 10 loop
-	xor edx, edx			;we going to compare first letter
-getWord:						;Get each word to be compared
-	xor eax, eax
-	mov al, cl
-	imul eax, 10			;mul displacement by word calculating
-	add esi, eax			;add displacement
-	inc ecx
-	cmp ecx, 10
-	je showOrdered
-	push esi
-	jmp movWordBuffer
-compareWord:
-	inc ecx
-	add esi, 10
-	mov ah, [esi]
-	mov al, [ebx]
+	call compareWord
 
-	cmp ecx, 1
-	je showOrdered		;need change for get Word
-	push esi
-	cmp al, ah
-	jge movWordBuffer
-	pop esi
+	inc ecx
+	cmp ecx, 9					;times to loop outer one less than array len
+	jl getWord
+doneSorting:
 	popad
 	ret
+
+
+compareWord:					;INNER compare loop
+	push ecx
+	inc ecx							;use same
+compareWordInit:
+	add ebx, 10					;move through words in inner loop
+
+	call cmpStr					;compare esi str with ebx
+	cmp eax, 1					;eax 1 if ebx word comes before
+	je comparingSwapStr
+	compareContinue:
+	inc ecx
+	cmp ecx, 10					;end of inner loop
+	jl compareWordInit
+doneComparing:
+	pop ecx
+	ret
+
+
+comparingSwapStr:
+	call swapStr				;swap esi str with ebx in array
+	jmp compareContinue
 
 ;-------------------------------------------------------
 ;Procedure to compare two strings alphabetically
@@ -119,9 +131,6 @@ cmpStrLoop:
 	or	al, 20h		;change 5bit to 1 | Lower Case ASCII
 	or	ah, 20h
 
-	PutCh ah
-	PutCh al
-
 	cmp ah, al		;compare the two chars
 	jg  ebxFirst
 	jl	esiFirst
@@ -129,6 +138,7 @@ cmpStrLoop:
 								;if we chececk all the chars in both strings
 	cmp ecx, 10
 	je areEqual
+
 	jmp	cmpStrLoop;if we make it here both chars are equal
 esiFirst:
 	mov eax, -1
@@ -144,15 +154,46 @@ endCmp:
 	pop esi
 	ret
 
+;-------------------------------------------------------
+;Procedure to swap two strings position in array
+;Swaps what ebx points to with esi str
+;-------------------------------------------------------
+swapStr:
+	pushad							;store registers
 
+	push esi
+	push ebx
+
+	mov esi, ebx				;esi point secon str
+	mov ebx, wordBuffer	;ebx to point to wordbuffer
+	call movWordBuffer	;move second str to wordBuffer
+
+	pop ebx							;get pointers back
+	pop esi
+
+											;move esi to str to second str location
+	call movWordBuffer	;moves 10 char esi str to ebx location
+
+											;move what is in buffer to esi
+	push esi
+	push ebx
+
+	mov ebx, esi
+	mov esi, wordBuffer
+	call movWordBuffer
+
+	pop ebx
+	pop esi
+
+	popad
+	ret
 
 ;-------------------------------------------------------
 ;Procedure to move a word to buffer
-;Moves 10char word saved being point to by ESI
+;Moves 10char word saved being point to by ESI to ebx
 ;-------------------------------------------------------
 movWordBuffer:
 	pushad
-	mov ebx, wordBuffer
 	xor cx, cx
 movWordBufferLoop:
 	mov ah,[esi]
@@ -163,9 +204,6 @@ movWordBufferLoop:
 	cmp cx, 10
 	jne movWordBufferLoop
 finishWordBufferMov:
-	nwln
-	PutStr wordBuffer
-	nwln
 	popad
 	ret
 
@@ -179,9 +217,8 @@ showNonOrdered:
 	jmp showWordsInit
 
 showOrdered:
-	PutStr	orderedMsg
 	nwln
-	PutStr	wordBuffer
+	PutStr	orderedMsg
 	nwln
 
 showWordsInit:
