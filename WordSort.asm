@@ -4,11 +4,11 @@
 nonOrderedMsg	db	"Ten unordered Words are: ",0
 orderedMsg	db	"The ten words ordered alphabetically: ",0
 						;10 words of 10bytes MAX each starts here
-word1		db  	"z", 0			;word 1
-word2		db 	"a", 0
-word3		db 	"c", 0			;if exactly 10 chars no need for 0
-word4		db 	"e", 0
-word5		db 	"b", 0
+word1		db  	"zoo", 0			;word 1
+word2		db 	"animal", 0
+word3		db 	"car", 0			;if exactly 10 chars no need for 0
+word4		db 	"zoo", 0
+word5		db 	"ball", 0
 word6		db 	"HOLA", 0
 word7		db 	"gato", 0
 word8		db 	"Costa Rica"
@@ -112,16 +112,16 @@ comparingSwapStr:
 ;ESI needs to point to first word, EBX to second word
 ;RETURN EAX: 0 (are equal), 1 EBX comes first, -1 ESI comes first
 ;-------------------------------------------------------
-cmpStr:
-	push esi
+cmpStr:													
+	push esi				;save these registers
 	push ebx
 	push ecx
-	xor ecx, ecx
+	xor ecx, ecx				;zero out counter
 cmpStrLoop:
-	mov ah, [esi]
+	mov ah, [esi]				;move first chars in each word to compare
 	mov al, [ebx]
 
-	inc esi
+	inc esi					;inc the pointers and counter
 	inc ebx
 	inc ecx
 
@@ -129,27 +129,28 @@ cmpStrLoop:
 	or	ah, 20h
 
 	cmp ah, al				;compare the two chars
-	jg  ebxFirst
-	jl	esiFirst
+	jg  ebxFirst				;if ah is greater than we need to swap
+	jl  esiFirst				;if al is greater than we are fine
+						;word ESI points to needs to be smaller it is first in array
 
-						;if we chececk all the chars in both strings
+						;if we checked all the chars in both strings
 	cmp ecx, 10
 	je areEqual
 
 	jmp	cmpStrLoop			;if we make it here both chars are equal
-esiFirst:
-	mov eax, -1
+esiFirst:					
+	mov eax, -1				;mov -1 to eax to let caller know esi is smaller
 	jmp endCmp
 ebxFirst:
-	mov eax, 1
+	mov eax, 1				;mov 1 to eax to let caller know esi is greate, need swap
 	jmp endCmp
 areEqual:
-	mov eax, 0
+	mov eax, 0				;mov 0 to eax because both words are equal
 endCmp:
-	pop ecx
+	pop ecx					;give these back
 	pop ebx
 	pop esi
-	ret
+	ret					;end procedure
 
 ;-------------------------------------------------------
 ;Procedure to swap two strings position in array
@@ -175,32 +176,32 @@ swapStr:
 	push esi
 	push ebx
 
-	mov ebx, esi
+	mov ebx, esi				;now we move to beginning of array, "smaller" word
 	mov esi, wordBuffer
 	call movWordBuffer
 
-	pop ebx
+	pop ebx					;restore these
 	pop esi
 
-	popad
+	popad					;restore all registers and end procedure
 	ret
 
 ;-------------------------------------------------------
 ;Procedure to move a word to buffer
 ;Moves 10char word saved being point to by ESI to ebx
 ;-------------------------------------------------------
-movWordBuffer:
+movWordBuffer:					;move a 10 char word pointed to by esi to ebx
 	pushad
-	xor cx, cx
+	xor cx, cx				;save registers and clear counter
 movWordBufferLoop:
-	mov ah,[esi]
+	mov ah,[esi]				;copy over each char
 	mov [ebx], ah
-	inc ebx
+	inc ebx					;inc the counters and pointers
 	inc esi
 	inc cx
-	cmp cx, 10
+	cmp cx, 10				;loop 10 times because 10 chars in each word
 	jne movWordBufferLoop
-finishWordBufferMov:
+finishWordBufferMov:				;end procedure and restore registers
 	popad
 	ret
 
